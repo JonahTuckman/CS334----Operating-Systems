@@ -1,3 +1,0 @@
-This is a testing file.
-Foo bar
-Fooing baring.
