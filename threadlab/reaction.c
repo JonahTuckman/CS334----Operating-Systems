@@ -37,8 +37,9 @@ reaction_h(struct reaction *reaction)
 	lock_acquire(&reaction->makingWater);
 	reaction->numH++;
 
-	//if(reaction-> numH < 2){
-		cond_wait(&reaction->HSleep, &reaction->makingWater);
+	cond_signal(&reaction->OSleep, &reaction->makingWater);
+	cond_wait(&reaction->HSleep, &reaction->makingWater);
+
 
 
 	lock_release(&reaction->makingWater);
