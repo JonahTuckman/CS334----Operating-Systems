@@ -13,8 +13,9 @@ struct reaction {
 		int numH;
 		int numO;
 		struct lock makingWater;
-		struct condition HnotReady;
-		struct condition OnotReady;
+		struct condition HSleep;
+		struct condition OSleep;
+		struct condition OneO;
 	};
 
 void
@@ -23,9 +24,9 @@ reaction_init(struct reaction *reaction)
 	reaction->numH = 0;
 	reaction->numO = 0;
 	lock_init(&reaction->makingWater);
-	cond_init(&reaction->HnotReady);
-	cond_init(&reaction->OnotReady);
-
+	cond_init(&reaction->HSleep);
+	cond_init(&reaction->OSleep);
+	cond_init(&reaction->OneO);
 }
 
 void
@@ -33,14 +34,22 @@ reaction_h(struct reaction *reaction)
 {
 	lock_acquire(&reaction->makingWater);
 	reaction->numH++;
-	if((reaction->numH >= 2) && (reaction->numO >= 1)) {
+	if (reaction->numH == 1){ // If this the first H then wait here
+		cond_wait(&reaction->HSleep, &reaction->makingWater);
+		lock_release(&reaction->makingWater);
+	} else if (reaction-> numH == 2 && reaction->numO == 0) { // We have two Hs but no Os
+		cond_wait(&reaction->OneO, &reaction->makingWater);
 		make_water();
 		reaction->numH-=2;
 		reaction->numO--;
-		cond_signal(&reaction->HnotReady, &reaction->makingWater);
 		lock_release(&reaction->makingWater);
-	} else {
-		cond_wait(&reaction->HnotReady, &reaction->makingWater);
+	}
+	else if((reaction->numH >= 2) && (reaction->numO >= 1)) { // If we have all we need up front
+		make_water();
+		reaction->numH-=2;
+		reaction->numO--;
+		cond_signal(&reaction->OSleep, &reaction->makingWater);
+		cond_signal(&reaction->HSleep, &reaction->makingWater);
 		lock_release(&reaction->makingWater);
 	}
 }
@@ -50,14 +59,13 @@ reaction_o(struct reaction *reaction)
 {
 	lock_acquire(&reaction->makingWater);
 	reaction->numO++;
-	if((reaction->numH >= 2) & (reaction->numO >= 1)) {
-		make_water();
-		reaction->numH-=2;
-		reaction->numO--;
-		cond_signal(&reaction->OnotReady, &reaction->makingWater);
+	if(reaction->numH >= 2 && reaction->numO == 1){
+		cond_signal(&reaction->HSleep, &reaction->makingWater);
+		cond_signal(&reaction->OneO, &reaction->makingWater);
 		lock_release(&reaction->makingWater);
-	} else {
-		cond_wait(&reaction->OnotReady, &reaction->makingWater);
+	}
+	else if(reaction->numH < 2){
+		cond_wait(&reaction->OSleep, &reaction->makingWater);
 		lock_release(&reaction->makingWater);
 	}
 }
