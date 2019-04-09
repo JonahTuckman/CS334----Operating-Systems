@@ -41,6 +41,7 @@ reaction_h(struct reaction *reaction)
 		lock_release(&reaction->makingWater);
 	} else {
 		cond_wait(&reaction->HnotReady, &reaction->makingWater);
+		lock_release(&reaction->makingWater);
 	}
 }
 
@@ -57,5 +58,6 @@ reaction_o(struct reaction *reaction)
 		lock_release(&reaction->makingWater);
 	} else {
 		cond_wait(&reaction->OnotReady, &reaction->makingWater);
+		lock_release(&reaction->makingWater);
 	}
 }
