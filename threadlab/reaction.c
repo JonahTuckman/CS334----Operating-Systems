@@ -34,38 +34,45 @@ reaction_h(struct reaction *reaction)
 {
 	lock_acquire(&reaction->makingWater);
 	reaction->numH++;
-	if (reaction->numH == 1){ // If this the first H then wait here
+
+	if (reaction->numH == 1){ // If we only have 1 H we dont have enough and wait
 		cond_wait(&reaction->HSleep, &reaction->makingWater);
 		lock_release(&reaction->makingWater);
-	} else if (reaction-> numH == 2 && reaction->numO == 0) { // We have two Hs but no Os
-		cond_wait(&reaction->OneO, &reaction->makingWater);
+	}
+	if (reaction-> numH >= 2 && reaction->numO == 0) { // We have two Hs but no Os
+		cond_wait(&reaction->OSleep, &reaction->makingWater); // Unlocked when a water comes
+		cond_signal(&reaction->HSleep, &reaction->makingWater); // This is locked from when we have 1 H
 		make_water();
 		reaction->numH-=2;
 		reaction->numO--;
 		lock_release(&reaction->makingWater);
+		//return;
 	}
-	else if((reaction->numH >= 2) && (reaction->numO >= 1)) { // If we have all we need up front
+	if((reaction->numH >= 2) && (reaction->numO >= 1)) { // If we have all we need up front
 		make_water();
 		reaction->numH-=2;
 		reaction->numO--;
 		cond_signal(&reaction->OSleep, &reaction->makingWater);
 		cond_signal(&reaction->HSleep, &reaction->makingWater);
 		lock_release(&reaction->makingWater);
+		//return;
 	}
 }
+
 
 void
 reaction_o(struct reaction *reaction)
 {
-	lock_acquire(&reaction->makingWater);
 	reaction->numO++;
-	if(reaction->numH >= 2 && reaction->numO == 1){
-		cond_signal(&reaction->HSleep, &reaction->makingWater);
-		cond_signal(&reaction->OneO, &reaction->makingWater);
-		lock_release(&reaction->makingWater);
-	}
-	else if(reaction->numH < 2){
+	if(reaction->numH < 2){ // Os are waiting until we have enough Hs to wake one
+		lock_acquire(&reaction->makingWater);
 		cond_wait(&reaction->OSleep, &reaction->makingWater);
 		lock_release(&reaction->makingWater);
+		}
+	if(reaction->numH >= 2 && reaction -> numO == 1){ // We have been waiting on an O
+		lock_acquire(&reaction->makingWater);
+		cond_signal(&reaction->OSleep, &reaction->makingWater);
+		lock_release(&reaction->makingWater);
 	}
+
 }
