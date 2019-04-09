@@ -37,21 +37,10 @@ reaction_h(struct reaction *reaction)
 	lock_acquire(&reaction->makingWater);
 	reaction->numH++;
 
-
-	if (reaction->numH >= 2 && reaction->numO == 0) { // We have two Hs but no Os
-		cond_wait(&reaction->OSleep1, &reaction->makingWater); // Unlocked when a water comes
-	}
-
-	if(reaction->numH >= 2 && reaction->numO >= 1) { // If we have all we need
-		make_water();
-		reaction->numH-=2;
-		reaction->numO--;
-		cond_signal(&reaction->OSleep, &reaction->makingWater);
-		cond_signal(&reaction->HSleep, &reaction->makingWater);
-	}
-	if (reaction->numH == 1){ // If we only have 1 H we don't have enough H and wait
+	//if(reaction-> numH < 2){
 		cond_wait(&reaction->HSleep, &reaction->makingWater);
-	}
+
+
 	lock_release(&reaction->makingWater);
 }
 
@@ -60,16 +49,18 @@ void
 reaction_o(struct reaction *reaction)
 {
 	lock_acquire(&reaction->makingWater);
-	
+
 	reaction->numO++;
 
-	if(reaction->numH >= 2){ // We have been waiting on an O
-		cond_signal(&reaction->OSleep1, &reaction->makingWater);
-	}
-
-	if(reaction->numH < 2){ // Os are waiting until we have enough Hs to wake one
+	while(reaction->numH < 2){
 		cond_wait(&reaction->OSleep, &reaction->makingWater);
-	}	
+	}
+		make_water();
+		reaction->numH-=2;
+		reaction->numO--;
+		//cond_signal(&reaction->OSleep, &reaction->makingWater);
+		cond_signal(&reaction->HSleep, &reaction->makingWater);
+
 
 	lock_release(&reaction->makingWater);
 
