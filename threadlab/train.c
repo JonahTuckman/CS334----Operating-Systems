@@ -43,13 +43,14 @@ station_load_train(struct station *station, int count)
 	station->numSeats = count;
 //	station->trainHere=1;
 
+	// Wake up a waiting passenger and wait for them
 	while((station->waitingPassenger > 0) && (count > 0)){
 		cond_signal(&station->waitForTrain, &station->fillingTrain); // passanger that has been waiting has been loaded / signaled
 		count--;
 		cond_wait(&station->waitToSeat, &station->fillingTrain);
 	}
-
-	while(station->waitingPassenger != 0 && station->numSeats != 0) { //run until the trainSpace or waitingPassengers has become 0
+	// This is signaled in load_passenger
+	while((station->waitingPassenger != 0 && station->numSeats != 0) && station->standing != 0) { //run until the trainSpace or waitingPassengers has become 0
 		cond_wait(&station->waitForPass, &station->fillingTrain);
 	}
 
@@ -67,7 +68,7 @@ station_wait_for_train(struct station *station)
 	///// ADD CONDITION HERE< CANNOT RETURN UNTIL LOAD TRAIN IS CALLED AND THERE IS SPACE
 
 //HERE IS THE ISSUE
-	while(station->numSeats == 0){ // Train is not here
+	while(station->numSeats == 0){ // Train is not here / no where to sit
 	// Otherwise the other function is called and the check there with train space is done
 		cond_wait(&station->waitForTrain, &station->fillingTrain);
 	}
