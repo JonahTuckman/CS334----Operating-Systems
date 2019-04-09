@@ -9,7 +9,6 @@ struct station {
 	int standing;
 	int allSeated;
 	int numSeats;
-//	int trainHere;
 	struct lock fillingTrain;
 	struct condition waitForTrain;
 	struct condition waitForPass;
@@ -25,7 +24,6 @@ station_init(struct station *station)
 	station->standing=0;
 	station->numSeats=0;
 	station->allSeated=0;
-//	station->trainHere=0;
 	lock_init(&station->fillingTrain);
 	cond_init(&station->waitForTrain);
 	cond_init(&station->waitForPass);
@@ -36,13 +34,10 @@ station_init(struct station *station)
 void
 station_load_train(struct station *station, int count)
 {
-	// CONDITION: May not return until train is fully loaded or all passengers are loaded
-	// Do not want to wait idly, want to continue to add passengers to train so lock, not wait
-
 	lock_acquire(&station->fillingTrain); // may not return until out of the while loop (one of the conditions is met)
 	station->numSeats = count;
-//	station->trainHere=1;
 
+	// CONDITION: May not return until train is fully loaded or all passengers are loaded
 	// Wake up a waiting passenger and wait for them
 	while((station->waitingPassenger > 0) && (count > 0)){
 		cond_signal(&station->waitForTrain, &station->fillingTrain); // passanger that has been waiting has been loaded / signaled
@@ -50,7 +45,8 @@ station_load_train(struct station *station, int count)
 		cond_wait(&station->waitToSeat, &station->fillingTrain); // wait until load train sits and is ready to conclude
 	}
 	// This is signaled in load_passenger
-if(station->standing > 0){
+if(station->standing > 0){ //If there are still people on the train standing we wait
+														// until loadtrain signals all have seated
 			cond_wait(&station->waitForPass, &station->fillingTrain);
 	}
 
@@ -63,7 +59,7 @@ void
 station_wait_for_train(struct station *station)
 {
 	lock_acquire(&station->fillingTrain);
-	station->waitingPassenger++;
+	station->waitingPassenger++; // One more passenger is here and waiting
 
 	// No need for a loop. All passengers will wait in order to be released one by one.
 		cond_wait(&station->waitForTrain, &station->fillingTrain);
