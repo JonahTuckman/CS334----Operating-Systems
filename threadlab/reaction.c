@@ -10,11 +10,11 @@
 void make_water();
 
 struct reaction {
-	int numH;
-	int numO;
-	struct lock makingWater;
-	struct condition HnotReady;
-	struct condition OnotReady;
+		int numH;
+		int numO;
+		struct lock makingWater;
+		struct condition HnotReady;
+		struct condition OnotReady;
 	};
 
 void
@@ -31,11 +31,13 @@ reaction_init(struct reaction *reaction)
 void
 reaction_h(struct reaction *reaction)
 {
+	lock_acquire(&reaction->makingWater);
 	reaction->numH++;
-	if((reaction->numH >= 2) & (reaction->numO >= 1)) {
-		cond_signal(&reaction->HnotReady, &reaction->makingWater);
-		lock_acquire(&reaction->makingWater);
+	if((reaction->numH >= 2) && (reaction->numO >= 1)) {
 		make_water();
+		reaction->numH-=2;
+		reaction->numO--;
+		cond_signal(&reaction->HnotReady, &reaction->makingWater);
 		lock_release(&reaction->makingWater);
 	} else {
 		cond_wait(&reaction->HnotReady, &reaction->makingWater);
@@ -45,11 +47,13 @@ reaction_h(struct reaction *reaction)
 void
 reaction_o(struct reaction *reaction)
 {
+	lock_acquire(&reaction->makingWater);
 	reaction->numO++;
 	if((reaction->numH >= 2) & (reaction->numO >= 1)) {
-		cond_signal(&reaction->OnotReady, &reaction->makingWater);
-		lock_acquire(&reaction->makingWater);
 		make_water();
+		reaction->numH-=2;
+		reaction->numO--;
+		cond_signal(&reaction->OnotReady, &reaction->makingWater);
 		lock_release(&reaction->makingWater);
 	} else {
 		cond_wait(&reaction->OnotReady, &reaction->makingWater);
