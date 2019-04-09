@@ -60,7 +60,7 @@ reaction_o(struct reaction *reaction)
 		reaction->numO--;
 		//cond_signal(&reaction->OSleep, &reaction->makingWater);
 		cond_signal(&reaction->HSleep, &reaction->makingWater);
-
+		cond_signal(&reaction->HSleep, &reaction->makingWater);
 
 	lock_release(&reaction->makingWater);
 
