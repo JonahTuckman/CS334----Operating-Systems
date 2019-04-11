@@ -10,9 +10,9 @@ struct station {
 	int allSeated;
 	int numSeats;
 	struct lock fillingTrain;
-	struct condition waitForTrain;
-	struct condition waitForPass;
-	struct condition waitToSeat;
+	struct condition waitForTrain; // When a passenger has arrived but there is not a seat yet
+	struct condition waitForPass; // For loadtrain to let know that all have seated and train may leave
+	struct condition waitToSeat; // when a passenger has loaded but not sat
 };
 
 
