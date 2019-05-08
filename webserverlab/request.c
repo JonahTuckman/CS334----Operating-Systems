@@ -172,14 +172,12 @@ void request_handle(int fd) {
 	    return;
 	}
 
-    // Will need a lock here as we are reading and writing static file
 	request_serve_static(fd, filename, sbuf.st_size);
     } else {
 	if (!(S_ISREG(sbuf.st_mode)) || !(S_IXUSR & sbuf.st_mode)) {
 	    request_error(fd, filename, "403", "Forbidden", "server could not run this CGI program");
 	    return;
 	}
-    // Will need a lock here as we are reading and writing dynamic file
 	request_serve_dynamic(fd, filename, cgiargs);
     }
 }
