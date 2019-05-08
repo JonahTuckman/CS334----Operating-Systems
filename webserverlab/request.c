@@ -159,7 +159,7 @@ void request_handle(int fd) {
     request_read_headers(fd);
     
     is_static = request_parse_uri(uri, filename, cgiargs);
-    if (stat(filename, &sbuf) < 0) {
+    if (stat(filename, &sbuf) < 0) { // If the check returns 0 it is dynamic
 	request_error(fd, filename, "404", "Not found", "server could not find this file");
 	return;
     }
@@ -169,12 +169,15 @@ void request_handle(int fd) {
 	    request_error(fd, filename, "403", "Forbidden", "server could not read this file");
 	    return;
 	}
+
+    // Will need a lock here as we are reading and writing static file
 	request_serve_static(fd, filename, sbuf.st_size);
     } else {
 	if (!(S_ISREG(sbuf.st_mode)) || !(S_IXUSR & sbuf.st_mode)) {
 	    request_error(fd, filename, "403", "Forbidden", "server could not run this CGI program");
 	    return;
 	}
+    // Will need a lock here as we are reading and writing dynamic file
 	request_serve_dynamic(fd, filename, cgiargs);
     }
 }
