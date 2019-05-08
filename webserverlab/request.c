@@ -143,8 +143,10 @@ void request_serve_static(int fd, char *filename, int filesize) {
 
 // handle a request
 void request_handle(int fd) {
+    // fd is condition of  accept_or_die
     int is_static;
     struct stat sbuf;
+
     char buf[MAXBUF], method[MAXBUF], uri[MAXBUF], version[MAXBUF];
     char filename[MAXBUF], cgiargs[MAXBUF];
     

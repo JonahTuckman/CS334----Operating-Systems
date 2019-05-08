@@ -34,6 +34,7 @@ int main(int argc, char *argv[]) {
 	struct sockaddr_in client_addr;
 	int client_len = sizeof(client_addr);
 	int conn_fd = accept_or_die(listen_fd, (sockaddr_t *) &client_addr, (socklen_t *) &client_len);
+	// Add a lock here
 	request_handle(conn_fd);
 	close_or_die(conn_fd);
     }

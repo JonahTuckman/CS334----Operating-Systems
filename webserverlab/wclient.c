@@ -80,6 +80,7 @@ int main(int argc, char *argv[]) {
     port = atoi(argv[2]);
     filename = argv[3];
     
+    // Critical Section
     /* Open a single connection to the specified host and port */
     clientfd = open_client_fd_or_die(host, port);
     
