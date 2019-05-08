@@ -41,8 +41,16 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
+//// STEPS ////
+// 1. Create a master threat that creates a fixed number (specified in the command line) of threads 
+// 		and adds them to a pool of worker threads.
+// 2. Master thread then accepts requests and places them into a fixed size (specified in the command line)
+// 		buffer.
+// 3. Producer - Consumer problem with threads and requests
+//		Producer = Worker Threads
+//		Consumer = Requests
 
-    
+
 
 
  
