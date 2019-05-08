@@ -13,11 +13,8 @@ int main(int argc, char *argv[]) {
 	pthread_t requests;
     char *root_dir = default_root;
     int port = 12000;
-	int bufferSize = argv[8]; // 8th argument is number of buffers
-	int poolSize = argv[6];  // 6th argument is size of pool thread
-    cond_t threads; 
-	cond_t requests;
-	lock_t lock;
+	struct pool
+	serverInit(argv[6], argv[8]);
 	
 
     while ((c = getopt(argc, argv, "d:p:")) != -1)
@@ -59,8 +56,21 @@ int main(int argc, char *argv[]) {
 //		Producer = Worker Threads
 //		Consumer = Requests
 
+struct server {
+	int poolSize;
+	int bufferSize;
+	cond_t requests;
+	cond_t threads;
+	mutex_t lock;
+}
 
-
+void serverInit(int poolSize, int bufferSize){
+	cond_t threads; 
+	cond_init(&server -> requests);
+	lock_t lock;
+	server->bufferSize = bufferSize; // 8th argument is number of buffers
+	server->poolSize = poolSize;  // 6th argument is size of pool thread
+}
 
 void createPool(int poolSize){
 	// make threads wake and sleep PoolSize number of times
