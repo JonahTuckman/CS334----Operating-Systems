@@ -10,7 +10,7 @@ char default_root[] = ".";
 int main(int argc, char *argv[]) {
     int c;
     char *root_dir = default_root;
-    int port = 10000;
+    int port = 12000;
     
     while ((c = getopt(argc, argv, "d:p:")) != -1)
 	switch (c) {
