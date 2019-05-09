@@ -5,17 +5,17 @@
 char default_root[] = ".";
 
 //
-// ./wserver [-d <basedir>] [-p <portnum>] 
-// 
+// ./wserver [-d <basedir>] [-p <portnum>]
+//
 int main(int argc, char *argv[]) {
     int c;
-	pthread_t pool;
+	pthread_t MASTER;
 	pthread_t requests;
     char *root_dir = default_root;
     int port = 12000;
-	struct pool
+	struct pool;
 	serverInit(argv[6], argv[8]);
-	
+
 
     while ((c = getopt(argc, argv, "d:p:")) != -1)
 	switch (c) {
@@ -39,8 +39,7 @@ int main(int argc, char *argv[]) {
 	int client_len = sizeof(client_addr);
 	int conn_fd = accept_or_die(listen_fd, (sockaddr_t *) &client_addr, (socklen_t *) &client_len);
 	// Add a lock here
-	pthread_create(&pool, NULL, createPool, poolSize); // Create MASTER Thread
-	pthread_create(&requests, NULL, handleRequests, bufferSize);
+	pthread_create(&MASTER, NULL, createPool, poolSize); // Create MASTER Thread
 	request_handle(conn_fd);
 	close_or_die(conn_fd);
     }
@@ -48,7 +47,7 @@ int main(int argc, char *argv[]) {
 }
 
 //// STEPS ////
-// 1. Create a master thread that creates a fixed number (specified in the command line) of threads 
+// 1. Create a master thread that creates a fixed number (specified in the command line) of threads
 // 		and adds them to a pool of worker threads.
 // 2. Master thread then accepts requests and places them into a fixed size (specified in the command line)
 // 		buffer.
@@ -56,33 +55,65 @@ int main(int argc, char *argv[]) {
 //		Producer = Worker Threads
 //		Consumer = Requests
 
-struct server {
-	int poolSize;
+//volatile int numWorkers = 0;
+//volatile int numThreads = 0;
+
+struct thread {
+  pthread_t poolThread;
+
+  int poolSize;
+  int numWorkers;
+
 	int bufferSize;
+  int numThreads;
+
 	cond_t requests;
 	cond_t threads;
 	mutex_t lock;
 }
 
-void serverInit(int poolSize, int bufferSize){
-	cond_t threads; 
-	cond_init(&server -> requests);
-	lock_t lock;
-	server->bufferSize = bufferSize; // 8th argument is number of buffers
-	server->poolSize = poolSize;  // 6th argument is size of pool thread
+struct clients {
+  int number;
+  int counter;
+}
+
+
+void threadInit(int poolSize, int bufferSize){
+	pthread_cond_init(&thread-> threads);
+	pthread_cond_init(&thread -> requests);
+	pthread_mutex_init(&thread->lock);
+	thread->bufferSize = bufferSize; // 8th argument is number of buffers
+	thread->poolSize = poolSize;  // 6th argument is size of pool thread
+  thread->numWorkers = 0;
+  thread->numThreads = 0;
+  thread->counter = 0;
 }
 
 void createPool(int poolSize){
 	// make threads wake and sleep PoolSize number of times
 	// Add threads to a pool buffer?
 	for(int i = 0; i < poolSize; i++){
-	
+    thread->numWorkers++;
+    pthread_create(&thread->poolThread, NULL, sleepPool);
 	}
+
+}
+
+void sleepPool(){
+    pthread_mutex_lock(&thread->lock);
+    while(thread->threads < 1){
+      pthread_cond_wait(&thread->threads, &thread-> mutex);
+    }
+    pthead_mutex_unlock(&thread->lock);
 }
 
 void handleRequests(int bufferSize){
 	// Call request handle to error check
 	// Signal a sleeping thread
 	// decrement buffered requests total
+
+    pthread_mutex_lock(&thread->lock);
+    while(thread->numWorkers == 0){
+      pthread_cond_wait();
+    }
 }
- 
