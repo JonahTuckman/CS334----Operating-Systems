@@ -9,13 +9,12 @@ char default_root[] = ".";
 //
 int main(int argc, char *argv[]) {
     int c;
-	pthread_t MASTER;
-	pthread_t requests;
     char *root_dir = default_root;
     int port = 12000;
-	struct pool;
-	serverInit(argv[6], argv[8]);
-  requestInit(argv[8]);
+
+    pthread_t MASTER;
+	   serverInit(argv[6], argv[8]);
+     requestInit(argv[8]);
 
 
     while ((c = getopt(argc, argv, "d:p:")) != -1)
@@ -58,6 +57,7 @@ int main(int argc, char *argv[]) {
 
 //volatile int numWorkers = 0;
 //volatile int numThreads = 0;
+volatile int count = 0;
 
 struct thread {
   pthread_t poolThread;
@@ -74,11 +74,12 @@ struct thread {
 }
 
 struct clients {
-  pthread_t name;
+  int id;
   int counter;
   int fileSize;
 }
 
+struct clients buffer[bufferSize];
 
 void threadInit(int poolSize, int bufferSize){
 	pthread_cond_init(&thread-> threads);
@@ -88,13 +89,15 @@ void threadInit(int poolSize, int bufferSize){
 	thread->poolSize = poolSize;  // 6th argument is size of pool thread
   thread->numWorkers = 0;
   thread->numThreads = 0;
-  thread->counter = 0;
 }
 
 void requestInit(int bufferSize){
-    pthread_t thread[bufferSize];
     for(int i = 0; i < bufferSize; i++){
-      pthread_create(&thread[i], NULL, sleepRequest);
+      count++;
+      buffer[i].id = i;
+      buffer[i].counter = count;
+      buffer[i].fileSize =
+      pthread_create(&buffer[i], NULL, sleepRequest);
     }
 }
 
