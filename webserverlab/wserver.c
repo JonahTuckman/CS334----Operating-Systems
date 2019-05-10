@@ -130,6 +130,7 @@ void sleepPool(){
       pthread_cond_wait(&thread->threads, &thread-> lock);
       request_handle(FILENAME!!!!);
       thread->numWorkers--;
+      pthread_cond_signal(&thread->request, &thread->lock);
     }
 
     //request_handle();
