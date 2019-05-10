@@ -168,12 +168,13 @@ int FIFO(struct clients buffer[]){
 int SFF(struct clients buffer[]){
       int length = sizeof(buffer) / sizeof(int);
       int min = 100000000;
-      temp = 0;
+      index = 0;
       for(int i = 0; i < length; i++){
           if(buffer[i].fileSize < min){
             min = buffer[i].fileSize;
-            temp = i;
+            index = i;
           }
       }
-      return i;
+      /// Must then remove element at that index fromt the array
+      return index;
 }
