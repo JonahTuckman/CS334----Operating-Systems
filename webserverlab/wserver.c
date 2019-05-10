@@ -139,8 +139,13 @@ void sleepPool(){
       request_handle(FILENAME!!!!);
       thread->numWorkers--;
 
-      ///// FIFO /////
-      pthread_cond_signal(&thread->request, &thread->lock);
+      /////// FIFO ////////
+      int minIndex = FIFO(buffer);
+      pthread_cond_signal(&thread[minIndex]->request, &thread->lock);
+
+      //////// SFF ///////////
+      int minFileSize = SFF(buffer);
+      pthread_cond_signal(&thread[minFileSize]->request, &thread->lock);
     }
 
     //request_handle();
@@ -148,7 +153,27 @@ void sleepPool(){
 }
 
 int FIFO(struct clients buffer[]){
-      for(int i = 0; i < buffer.length; i++){
-
+      int length = sizeof(buffer) / sizeof(int);
+      int min = 100000;
+      temp = 0;
+      for(int i = 0; i < length; i++){
+          if(buffer[i].count < min){
+            min = buffer[i].count;
+            temp = i;
+          }
       }
+      return i;
+}
+
+int SFF(struct clients buffer[]){
+      int length = sizeof(buffer) / sizeof(int);
+      int min = 100000000;
+      temp = 0;
+      for(int i = 0; i < length; i++){
+          if(buffer[i].fileSize < min){
+            min = buffer[i].fileSize;
+            temp = i;
+          }
+      }
+      return i;
 }
