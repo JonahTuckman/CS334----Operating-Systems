@@ -116,11 +116,14 @@ void sleepRequest(){
 void createPool(int poolSize){
 	// make threads wake and sleep PoolSize number of times
 	// Add threads to a pool buffer?
-	for(int i = 0; i < poolSize; i++){
+  pthread_mutex_lock(&thread->lock);
+
+  for(int i = 0; i < poolSize; i++){
     thread->numWorkers++;
     pthread_create(&thread->poolThread, NULL, sleepPool);
 	}
 
+  pthread_mutex_unlock(&thread->lock);
 }
 
 void sleepPool(){
@@ -135,17 +138,4 @@ void sleepPool(){
 
     //request_handle();
     pthead_mutex_unlock(&thread->lock);
-}
-
-void handleRequests(int bufferSize){
-	// Call request handle to error check
-	// Signal a sleeping thread
-	// decrement buffered requests total
-
-
-    pthread_mutex_lock(&thread->lock);
-    while(thread->numWorkers == 0){
-      pthread_cond_wait();
-    }
-    pthread_cond_signal()
 }
