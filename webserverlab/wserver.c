@@ -175,6 +175,7 @@ int SFF(struct clients buffer[]){
             index = i;
           }
       }
+      //// SORT FILES IN ORDER ????
       /// Must then remove element at that index fromt the array
       return index;
 }
