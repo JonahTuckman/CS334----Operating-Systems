@@ -96,16 +96,19 @@ void requestInit(int bufferSize){
       count++;
       buffer[i].id = i;
       buffer[i].counter = count;
-      buffer[i].fileSize =
+      buffer[i].fileSize = stat(FILENAME!!!!!!!!!);
       pthread_create(&buffer[i], NULL, sleepRequest);
     }
 }
 
 void sleepRequest(){
     pthread_mutex_lock(&thread->lock);
-    while(thread->numWorkers != 0){
+    while(thread->numWorkers == thread->poolSize){
       pthread_cond_wait(&thread->requests, &thread->lock);
     }
+    thread->numWorkers++;
+    pthread_cond_signal(&thread->threads, &thread->lock);
+
     pthread_mutex_unlock(&thread->lock);
 }
 
@@ -123,11 +126,13 @@ void createPool(int poolSize){
 void sleepPool(){
     pthread_mutex_lock(&thread->lock);
 
-    while(thread->threads < 1){
+    while(1){
       pthread_cond_wait(&thread->threads, &thread-> lock);
+      request_handle(FILENAME!!!!);
+      thread->numWorkers--;
     }
 
-    request_handle();
+    //request_handle();
     pthead_mutex_unlock(&thread->lock);
 }
 
