@@ -13,7 +13,8 @@ int main(int argc, char *argv[]) {
     int port = 12000;
 
     pthread_t MASTER;
-	   serverInit(argv[6], argv[8]);
+
+     threadInit(argv[6], argv[8]);
      requestInit(argv[8]);
 
 
@@ -57,7 +58,7 @@ int main(int argc, char *argv[]) {
 
 //volatile int numWorkers = 0;
 //volatile int numThreads = 0;
-volatile int count = 0;
+volatile int count = 0; // incremented when adding a thread to buffer to show order of arival
 
 struct thread {
   pthread_t poolThread;
@@ -65,7 +66,6 @@ struct thread {
   int poolSize;
   int numWorkers;
 
-	int bufferSize;
   int numThreads;
 
 	cond_t requests;
@@ -92,6 +92,9 @@ void threadInit(int poolSize, int bufferSize){
 }
 
 void requestInit(int bufferSize){
+
+    pthread_mutex_lock(&thread->lock);
+
     for(int i = 0; i < bufferSize; i++){
       count++;
       buffer[i].id = i;
@@ -99,6 +102,8 @@ void requestInit(int bufferSize){
       buffer[i].fileSize = stat(FILENAME!!!!!!!!!);
       pthread_create(&buffer[i], NULL, sleepRequest);
     }
+
+    pthread_mutex_unlock(&thread->lock);
 }
 
 void sleepRequest(){
@@ -133,9 +138,17 @@ void sleepPool(){
       pthread_cond_wait(&thread->threads, &thread-> lock);
       request_handle(FILENAME!!!!);
       thread->numWorkers--;
+
+      ///// FIFO /////
       pthread_cond_signal(&thread->request, &thread->lock);
     }
 
     //request_handle();
     pthead_mutex_unlock(&thread->lock);
+}
+
+int FIFO(struct clients buffer[]){
+      for(int i = 0; i < buffer.length; i++){
+
+      }
 }
