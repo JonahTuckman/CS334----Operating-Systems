@@ -15,6 +15,7 @@ int main(int argc, char *argv[]) {
     int port = 12000;
 	struct pool;
 	serverInit(argv[6], argv[8]);
+  requestInit(argv[8]);
 
 
     while ((c = getopt(argc, argv, "d:p:")) != -1)
@@ -73,8 +74,9 @@ struct thread {
 }
 
 struct clients {
-  int number;
+  pthread_t name;
   int counter;
+  int fileSize;
 }
 
 
@@ -82,12 +84,28 @@ void threadInit(int poolSize, int bufferSize){
 	pthread_cond_init(&thread-> threads);
 	pthread_cond_init(&thread -> requests);
 	pthread_mutex_init(&thread->lock);
-	thread->bufferSize = bufferSize; // 8th argument is number of buffers
+	//thread->bufferSize = bufferSize; // 8th argument is number of buffers
 	thread->poolSize = poolSize;  // 6th argument is size of pool thread
   thread->numWorkers = 0;
   thread->numThreads = 0;
   thread->counter = 0;
 }
+
+void requestInit(int bufferSize){
+    pthread_t thread[bufferSize];
+    for(int i = 0; i < bufferSize; i++){
+      pthread_create(&thread[i], NULL, sleepRequest);
+    }
+}
+
+void sleepRequest(){
+    pthread_mutex_lock(&thread->lock);
+    while(thread->numWorkers != 0){
+      pthread_cond_wait(&thread->requests, &thread->lock);
+    }
+    pthread_mutex_unlock(&thread->lock);
+}
+
 
 void createPool(int poolSize){
 	// make threads wake and sleep PoolSize number of times
@@ -101,9 +119,12 @@ void createPool(int poolSize){
 
 void sleepPool(){
     pthread_mutex_lock(&thread->lock);
+
     while(thread->threads < 1){
-      pthread_cond_wait(&thread->threads, &thread-> mutex);
+      pthread_cond_wait(&thread->threads, &thread-> lock);
     }
+
+    request_handle();
     pthead_mutex_unlock(&thread->lock);
 }
 
@@ -112,8 +133,10 @@ void handleRequests(int bufferSize){
 	// Signal a sleeping thread
 	// decrement buffered requests total
 
+
     pthread_mutex_lock(&thread->lock);
     while(thread->numWorkers == 0){
       pthread_cond_wait();
     }
+    pthread_cond_signal()
 }
