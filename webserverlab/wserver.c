@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "request.h"
 #include "io_helper.h"
-#include "pthread.h"
+#include <pthread.h>
 
 char default_root[] = ".";
 
