@@ -95,7 +95,7 @@ int connection_init(connection_t *connection) {
 }
 
 int connection_buffer_init(buff_t *condbuf, int size){ // return 0 on success
-  condbuf->buff = (connection_t *)malloc(sizeof(buff_t) * size); // Size of buff_t * size of buffer
+  condbuf->buff = (connection_t *)malloc(sizeof(connection_t) * size); // Size of buff_t * size of buffer
   if(condbuf->buff == NULL) return 1; // failure
 
   int error = 0;
