@@ -2,6 +2,7 @@
 #include "request.h"
 #include "io_helper.h"
 #include "request.c"
+#include "pthread.h"
 
 char default_root[] = ".";
 
@@ -44,6 +45,10 @@ typedef struct __worker_args_t {
 
 
 typedef void(*sched_t)(buff_t*,connection_t*);
+void FIFO(buff_t *buffer, connection_t *connection);
+void SFF(buff_t *buffer, connection_t *connection);
+
+void copy(connection_t *destination, connection_t *source);
 
 int connection_init(connection_t *connection) {
     connection->valid = 0; // All begin unvalidated
@@ -86,7 +91,7 @@ int connection_init(connection_t *connection) {
 }
 
 int connection_buffer_init(buff_t *condbuf, int size){ // return 0 on success
-  condbuf->buff = (buff_t *)malloc(sizeof(buff_t) * size); // Size of buff_t * size of buffer
+  condbuf->buff = (connection_t *)malloc(sizeof(buff_t) * size); // Size of buff_t * size of buffer
   if(condbuf->buff == NULL) return 1; // failure
 
   int error = 0;
@@ -137,10 +142,10 @@ void *worker_thread(void *args) {
       condbuff->priority[i - 1] = condbuff->priority[i];
     }
 
-    pthread_cond_signal(&condbuff->full, &condbuff->lock);
+    pthread_cond_signal(&condbuff->full);
     pthread_mutex_unlock(&condbuff->lock);
 
-    request_handle(&request);
+    request_handle(request.fd);
     close_or_die(request.fd);
   }
 }
@@ -208,7 +213,7 @@ int insert_connection(buff_t *cbuf, connection_t *connection){
   return index;
 }
 
-int FIFO(buff_t *cbuff, connection_t *connection){
+void FIFO(buff_t *cbuff, connection_t *connection){
 
       int index = insert_connection(cbuff, connection);
 
@@ -219,10 +224,9 @@ int FIFO(buff_t *cbuff, connection_t *connection){
 
       cbuff->priority[new_index] = index;
 
-      return index;
 }
 
-int SFF(buff_t *cbuff, connection_t *connection){
+void SFF(buff_t *cbuff, connection_t *connection){
 
       int index = insert_connection(cbuff, connection);
 
@@ -237,8 +241,6 @@ int SFF(buff_t *cbuff, connection_t *connection){
       }
 
       cbuff->priority[new_index + 1] = index;
-
-      return index;
 }
 
 
@@ -251,8 +253,6 @@ int main(int argc, char *argv[]) {
     int threads = 1;
     int buffers = 1;
 
-
-    pthread_t MASTER;
 
     // threadInit(argv[6], argv[8]);
     //requestInit(argv[8]);
@@ -289,7 +289,7 @@ int main(int argc, char *argv[]) {
     if(strcmp(scheduler, "FIFO") == 0){
       schedAlgo = FIFO;
     } else if (strcmp(scheduler, "SFF") == 0) {
-      schedAlgo = SFF;
+      schedAlgo = (sched_t)SFF;
     } else {
       fprintf(stderr, "Scheduling Algorithm Not Supported");
       exit(1);
@@ -298,7 +298,7 @@ int main(int argc, char *argv[]) {
     // INITIALIZATION ERROR CHECKING
     // Buffer initialize
     buff_t buff;
-    if(buf_init(&buff, buffers)){
+    if(connection_buffer_init(&buff, buffers)){
       fprintf(stderr, "Buffer Failure\n" );
       exit(1);
     }
@@ -316,22 +316,22 @@ int main(int argc, char *argv[]) {
     // now, get to work... blocking until connection comes
     int listen_fd = open_listen_fd_or_die(port);
 
-    connection_t cond;
-    if(connection_buffer_init(&cond, buffers)) {
+    connection_t conn;
+    if(connection_init(&conn)) {
       fprintf(stderr, "Connection Failure\n");
       exit(1);
     }
-    cond.valid = 1;
+    conn.valid = 1;
 
     sockaddr_t socketaddress;
     socklen_t socketlength;
 
     while (1) {
         socketlength = sizeof(socketaddress);
-	      cond.fd = accept_or_die(listen_fd, &socketaddress, &socketlength);
+	      conn.fd = accept_or_die(listen_fd, &socketaddress, &socketlength);
 
-        if(view_request(&cond)) {
-          close_or_die(cond.fd);
+        if(view_request(&conn)) {
+          close_or_die(conn.fd);
           continue;
         }
 
@@ -341,9 +341,9 @@ int main(int argc, char *argv[]) {
         }
 
         // Use the scheduler set in command line to schedule the buffer wake up
-        schedAlgo(&buff, &cond);
+        schedAlgo(&buff, &conn);
 
-        pthread_cond_signal(&buff.sleep, &buff.lock);
+        pthread_cond_signal(&buff.sleep);
 
         pthread_mutex_unlock(&buff.lock);
     }
