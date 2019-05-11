@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include "request.h"
 #include "io_helper.h"
-#include "request.c"
 #include "pthread.h"
 
 char default_root[] = ".";
@@ -42,13 +41,18 @@ typedef struct __worker_args_t {
 	char *root;
 } worker_args_t;
 
-
-
+// Defining functions that exist outside of the main
+int connection_init(connection_t *connection);
+int connection_buffer_init(buff_t *condbuf, int size);
+void *worker_thread(void *args);
+int create_worker_threads(int numThreads, worker_args_t *args);
+int view_request(connection_t *connection);
 typedef void(*sched_t)(buff_t*,connection_t*);
 void FIFO(buff_t *buffer, connection_t *connection);
 void SFF(buff_t *buffer, connection_t *connection);
-
+int insert_connection(buff_t *cbuf, connection_t *connection);
 void copy(connection_t *destination, connection_t *source);
+
 
 int connection_init(connection_t *connection) {
     connection->valid = 0; // All begin unvalidated

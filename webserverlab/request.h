@@ -1,4 +1,8 @@
 #ifndef __REQUEST_H__
+#define __REQUEST_H__
+
+
+#define MAXBUF (8192)
 
 void request_handle(int fd);
 void request_error(int fd, char *cause, char *errnum, char *shortmsg, char *longmsg);
