@@ -11,21 +11,6 @@ char default_root[] = ".";
 
 // Helpers
 
-typedef struct __connection_t {
-  int valid; // check for allocation
-  int fd; // file descriptor
-  int dynamic; // dynamic or is_static
-  size_t filesize; // size of the connection requests
-  mode_t mode; // mode of request
-
-  char *method; // HTTP
-  char *uri; // URI
-  char *version;
-  char *filename; // PATH
-  char *filetype; // Dyn of Stat
-  char *cgiargs; // args for cgi
-} connection_t;
-
 typedef struct __buff_t {
   connection_t *buff;
   int size;
@@ -149,7 +134,7 @@ void *worker_thread(void *args) {
     pthread_cond_signal(&condbuff->full);
     pthread_mutex_unlock(&condbuff->lock);
 
-    request_handle(request.fd);
+    request_handle(&request);
     close_or_die(request.fd);
   }
 }
@@ -170,7 +155,7 @@ void copy(connection_t *destination, connection_t *source){
   // integer copy
   destination->valid = source->valid;
   destination->fd = source->fd;
-  destination->dynamic= source->dynamic;
+  destination->dynamic = source->dynamic;
   destination->filesize = source->filesize;
   destination->mode = source->mode;
 
@@ -192,7 +177,7 @@ int view_request(connection_t *connection){ // view stat of request (file size)
   readline_or_die(connection->fd, buff, MAXBUF);
   sscanf(buff, "%s, %s, %s", connection->method, connection->uri, connection->version);
 
-  request_parse_uri(connection->uri, connection->filename, connection->cgiargs);
+  request_parse_uri(connection);
 
   struct stat sbuff;
   if(stat(connection->filename, &sbuff)) {
@@ -258,10 +243,6 @@ int main(int argc, char *argv[]) {
     int buffers = 1;
 
 
-    // threadInit(argv[6], argv[8]);
-    //requestInit(argv[8]);
-
-
     while ((c = getopt(argc, argv, "d:p:t:b:s")) != -1)
 	switch (c) {
 	case 'd':
@@ -291,7 +272,7 @@ int main(int argc, char *argv[]) {
     // Compare / Assign input scheduler algorithm
     sched_t schedAlgo;
     if(strcmp(scheduler, "FIFO") == 0){
-      schedAlgo = FIFO;
+      schedAlgo = (sched_t)FIFO;
     } else if (strcmp(scheduler, "SFF") == 0) {
       schedAlgo = (sched_t)SFF;
     } else {
