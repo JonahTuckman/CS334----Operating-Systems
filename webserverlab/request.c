@@ -7,7 +7,7 @@
 // Hopefully this is not a problem ... :)
 //
 
-#define MAXBUF (300000)
+#define MAXBUF (300000) // maximum value possible
 
 void request_error(int fd, char *cause, char *errnum, char *shortmsg, char *longmsg) {
     char buf[MAXBUF], body[MAXBUF];
