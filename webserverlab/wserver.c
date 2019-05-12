@@ -243,7 +243,7 @@ int main(int argc, char *argv[]) {
     int buffers = 1;
 
 
-    while ((c = getopt(argc, argv, "d:p:t:b:s")) != -1)
+    while ((c = getopt(argc, argv, "d:p:t:b:s:")) != -1)
 	switch (c) {
 	case 'd':
 	    root_dir = optarg;
@@ -258,7 +258,7 @@ int main(int argc, char *argv[]) {
       buffers = atoi(optarg);
       break;
   case 's':
-      scheduler = optarg;
+      strncpy(scheduler, optarg, 5);
       break;
 
 
@@ -272,9 +272,9 @@ int main(int argc, char *argv[]) {
     // Compare / Assign input scheduler algorithm
     sched_t schedAlgo;
     if(strcmp(scheduler, "FIFO") == 0){
-      schedAlgo = (sched_t)FIFO;
+      schedAlgo = FIFO;
     } else if (strcmp(scheduler, "SFF") == 0) {
-      schedAlgo = (sched_t)SFF;
+      schedAlgo = SFF;
     } else {
       fprintf(stderr, "Scheduling Algorithm Not Supported");
       exit(1);
