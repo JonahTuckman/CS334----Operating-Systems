@@ -1,7 +1,7 @@
 #ifndef __REQUEST_H__
 #define __REQUEST_H__
 
-#define MAXBUF (300000) // maximum value possible
+#define MAXBUF (8192)  // maximum value possible
 
 #include <sys/stat.h>
 #include <sys/types.h>

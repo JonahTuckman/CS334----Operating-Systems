@@ -76,9 +76,13 @@ int main(int argc, char *argv[]) {
 	exit(1);
     }
     
+    
     host = argv[1];
+   //host = "localhost";
     port = atoi(argv[2]);
+    //port = 8003;
     filename = argv[3];
+   // filename = "spin.cgi";
     
     // Critical Section
     /* Open a single connection to the specified host and port */

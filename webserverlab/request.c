@@ -7,7 +7,7 @@
 // Hopefully this is not a problem ... :)
 //
 
-#define MAXBUF (300000) // maximum value possible
+#define MAXBUF (8192) // maximum value possible
 
 void request_error(int fd, char *cause, char *errnum, char *shortmsg, char *longmsg) {
     char buf[MAXBUF], body[MAXBUF];
@@ -45,9 +45,13 @@ void request_read_headers(int fd) {
     char buf[MAXBUF];
 
     readline_or_die(fd, buf, MAXBUF);
+    printf("\n%s\n",buf);
     while (strcmp(buf, "\r\n")) {
 	readline_or_die(fd, buf, MAXBUF);
+    printf("\n%s\n",buf);
     }
+
+    printf("\n%s\n",buf);
     return;
 }
 
@@ -62,7 +66,7 @@ void request_parse_uri(connection_t *connection) {
     if (strstr(connection->uri, ".cgi")) {
 	// static
     connection->dynamic = 1;
-    cgiargs = index(connection->uri, '?');
+    cgiargs = strchr(connection->uri, '?');
     if(cgiargs){ // if above calculation is 1
       strcpy(connection->cgiargs,cgiargs+1); // write args + 1
       *cgiargs = '\0'; // end line
@@ -75,10 +79,14 @@ void request_parse_uri(connection_t *connection) {
   }
 
   // find the file name
+  // Change to index.html or spin.cgi  to work 
   sprintf(connection->filename, ".%s", connection->uri);
-  if(connection->uri[strlen(connection->uri) - 1] == '/'){ // pathname of URI
+  
+  
+   if(connection->uri[strlen(connection->uri) - 1] == '/'){ // pathname of URI
     strcat(connection->filename, "index.html"); // run index file to launch html web browser
   }
+  
 }
 
 //
@@ -108,6 +116,8 @@ void request_serve_dynamic(connection_t *connection) {
 
     write_or_die(connection->fd, buf, strlen(buf));
 
+    
+
     if (fork_or_die() == 0) {                        // child
 	setenv_or_die("QUERY_STRING", connection->cgiargs, 1);   // args to cgi go here
 	dup2_or_die(connection->fd, STDOUT_FILENO);              // make cgi writes go to socket (not screen)
@@ -124,6 +134,8 @@ void request_serve_static(connection_t *connection) {
     char *srcp,  buf[MAXBUF];
 
     request_get_filetype(connection->filename, connection->filetype);
+
+    printf("\nstatic: filename %s\n", connection->filename);
     srcfd = open_or_die(connection->filename, O_RDONLY, 0);
 
     // Rather than call read() to read the file into memory,
@@ -149,43 +161,61 @@ void request_serve_static(connection_t *connection) {
 // handle a request
 // REWRITE to take in a connection to handle
 void request_handle(connection_t *connection) {
-    // fd is condition of  accept_or_die
+    //fd is condition of  accept_or_die
     //int is_static;
-    //struct stat sbuf;
+    struct stat sbuf;
 
-    //char buf[MAXBUF], method[MAXBUF], uri[MAXBUF], version[MAXBUF];
-    //char filename[MAXBUF], cgiargs[MAXBUF];
+    //char buf[MAXBUF];
+  //  char filename[MAXBUF], cgiargs[MAXBUF];
 
-    //readline_or_die(fd, buf, MAXBUF);
-    //sscanf(buf, "%s %s %s", method, uri, version);
-    //printf("method:%s uri:%s version:%s\n", method, uri, version);
-
+     printf("\nhandler here1\n");
+     /*
     if (strcasecmp(connection->method, "GET")) {
 	request_error(connection->fd, connection->method, "501", "Not Implemented", "server does not implement this method");
 	return;
     }
-    request_read_headers(connection->fd);
+    */
+     printf("\nhandler here2\n");
+    //request_read_headers(connection->fd);
+     printf("\nhandler here3\n");
 
-    //is_static = request_parse_uri(uri, filename, cgiargs);
-  //  if (stat(filename, &sbuf) < 0) { // If the check returns 0 it is dynamic
-	//request_error(fd, filename, "404", "Not found", "server could not find this file");
-	//return;
-  //  }
-
+ 
+    if (stat(connection->filename, &sbuf) < 0) { // If the check returns 0 it is dynamic
+	request_error(connection->fd, connection->filename, "404", "Not found", "server could not find this file");
+	return;
+    }
     // find which type of file is requested
     // check for errors then call request_serve with type
-    if (!connection->dynamic) { // static file
+    
+     //printf("\nhandler here4\n");
+   /*
+    if(connection->dynamic==1){ 
+
+    request_serve_dynamic(connection);
+
+    } else {
+
+        request_serve_static(connection);
+    }
+      */  
+    if(connection->dynamic==1){ 
 	if (!(S_ISREG(connection->mode)) || !(S_IRUSR & connection->mode)) {
 	    request_error(connection->fd, connection->filename, "403", "Forbidden", "server could not read this file");
-	    return;
-	}
+	       return;
+        }
+	
+     printf("\nhandler here5\n");
+    request_serve_dynamic(connection);
+	} else { 
 
-	request_serve_static(connection);
-} else { // dynamic file
-	if (!(S_ISREG(connection->mode)) || !(S_IXUSR & connection->mode)) {
+        if(!(S_ISREG(connection->mode)) || !(S_IXUSR & connection->mode)) {
 	    request_error(connection->fd, connection->filename, "403", "Forbidden", "server could not run this CGI program");
 	    return;
 	}
-	request_serve_dynamic(connection);
+     printf("\nhandler here6\n");
+	request_serve_static(connection);
     }
+     printf("\nhandler here7\n");
+
+     
 }
